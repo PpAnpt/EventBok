@@ -1,4 +1,7 @@
 import { Router } from "express";
+import * as ctrl from "../controllers/zones.controller.js";
+
 const router = Router();
-// TODO: add zones routes
+router.get("/", ctrl.listZones);
+router.get("/:id", ctrl.getZone);
 export default router;

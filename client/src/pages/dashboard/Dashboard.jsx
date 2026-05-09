@@ -1,31 +1,33 @@
+import { useState, useEffect } from "react";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { reportsApi } from "../../api/index.js";
 
-const stats = [
-  { label: "Total Bookings", value: "1,234", change: "+12.5%", icon: "◫", color: "#7c3aed", bg: "#f3f0ff" },
-  { label: "Active Concerts", value: "28",    change: "+4",     icon: "♪", color: "#ec4899", bg: "#fdf2f8" },
-  { label: "Revenue",         value: "$45,678",change: "+23.1%",icon: "$", color: "#10b981", bg: "#ecfdf5" },
-  { label: "Total Customers", value: "3,456", change: "+8.2%",  icon: "👥",color: "#f59e0b", bg: "#fffbeb" },
-];
-
-const revenueData = [
-  { month: "Jan", revenue: 12000 },
-  { month: "Feb", revenue: 18000 },
-  { month: "Mar", revenue: 15000 },
-  { month: "Apr", revenue: 24000 },
-  { month: "May", revenue: 22000 },
-  { month: "Jun", revenue: 30000 },
-];
-
-const bookingData = [
-  { month: "Jan", bookings: 150 },
-  { month: "Feb", bookings: 175 },
-  { month: "Mar", bookings: 165 },
-  { month: "Apr", bookings: 230 },
-  { month: "May", bookings: 215 },
-  { month: "Jun", bookings: 295 },
+const defaultStats = [
+  { label: "Total Bookings", value: "-", change: "", icon: "◫", color: "#7c3aed", bg: "#f3f0ff" },
+  { label: "Active Concerts", value: "-", change: "", icon: "♪", color: "#ec4899", bg: "#fdf2f8" },
+  { label: "Revenue", value: "-", change: "", icon: "$", color: "#10b981", bg: "#ecfdf5" },
+  { label: "Total Customers", value: "-", change: "", icon: "👥", color: "#f59e0b", bg: "#fffbeb" },
 ];
 
 export default function Dashboard() {
+  const [stats, setStats] = useState(defaultStats);
+  const [revenueData, setRevenueData] = useState([]);
+  const [bookingData, setBookingData] = useState([]);
+
+  useEffect(() => {
+    reportsApi.summary().then((res) => {
+      setStats([
+        { label: "Total Bookings",  value: res.data.total_bookings.toLocaleString(), icon: "◫", color: "#7c3aed", bg: "#f3f0ff" },
+        { label: "Active Concerts", value: res.data.active_concerts.toLocaleString(), icon: "♪", color: "#ec4899", bg: "#fdf2f8" },
+        { label: "Revenue",         value: `$${res.data.revenue.toLocaleString()}`, icon: "$", color: "#10b981", bg: "#ecfdf5" },
+        { label: "Total Customers", value: res.data.total_customers.toLocaleString(), icon: "👥", color: "#f59e0b", bg: "#fffbeb" },
+      ]);
+    }).catch(() => {});
+
+    reportsApi.revenue().then((res) => setRevenueData(res.data.data || [])).catch(() => {});
+    reportsApi.bookings().then((res) => setBookingData(res.data.data || [])).catch(() => {});
+  }, []);
+
   return (
     <div>
       <div style={{ marginBottom: 28 }}>
@@ -33,30 +35,20 @@ export default function Dashboard() {
         <p style={{ color: "var(--color-text-muted)", margin: "4px 0 0", fontSize: 14 }}>Welcome back, Admin 🔑</p>
       </div>
 
-      {/* Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16, marginBottom: 24 }}>
         {stats.map((s) => (
-          <div key={s.label} style={{
-            background: "#fff", borderRadius: 16, padding: "20px",
-            borderTop: `3px solid ${s.color}`, boxShadow: "0 1px 8px rgba(0,0,0,0.06)"
-          }}>
+          <div key={s.label} style={{ background: "#fff", borderRadius: 16, padding: "20px", borderTop: `3px solid ${s.color}`, boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <p style={{ color: "var(--color-text-muted)", fontSize: 13, margin: "0 0 8px" }}>{s.label}</p>
                 <p style={{ fontSize: 26, fontWeight: 700, margin: 0 }}>{s.value}</p>
-                <p style={{ color: "#10b981", fontSize: 12, margin: "4px 0 0" }}>↑ {s.change}</p>
               </div>
-              <div style={{
-                width: 44, height: 44, borderRadius: 12,
-                background: s.bg, display: "flex", alignItems: "center",
-                justifyContent: "center", fontSize: 20
-              }}>{s.icon}</div>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: s.bg, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{s.icon}</div>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Charts */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
         <div style={{ background: "#fff", borderRadius: 16, padding: 24, boxShadow: "0 1px 8px rgba(0,0,0,0.06)" }}>
           <div style={{ marginBottom: 16 }}>
@@ -72,7 +64,7 @@ export default function Dashboard() {
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="revenue" fill="#a78bfa" radius={[4,4,0,0]} />
+              <Bar dataKey="revenue" fill="#a78bfa" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>

@@ -48,21 +48,21 @@ export async function getConcert(id) {
 }
 
 export async function createConcert(data) {
-  const { concert_name, artist_name, description, organizer_id, venue_id, status = "upcoming" } = data;
+  const { concert_name, artist_name, description, organizer_id, venue_id, status = "upcoming", cover_url } = data;
   const { rows } = await pool.query(
-    `INSERT INTO concerts (concert_name, artist_name, description, organizer_id, venue_id, status)
-     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-    [concert_name, artist_name, description, organizer_id, venue_id, status]
+    `INSERT INTO concerts (concert_name, artist_name, description, organizer_id, venue_id, status, cover_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+    [concert_name, artist_name, description, organizer_id, venue_id, status, cover_url || null]
   );
   return rows[0];
 }
 
 export async function updateConcert(id, data) {
-  const { concert_name, artist_name, description, venue_id, status } = data;
+  const { concert_name, artist_name, description, venue_id, status, cover_url } = data;
   const { rows } = await pool.query(
-    `UPDATE concerts SET concert_name=$1, artist_name=$2, description=$3, venue_id=$4, status=$5, updated_at=NOW()
-     WHERE concert_id=$6 RETURNING *`,
-    [concert_name, artist_name, description, venue_id, status, id]
+    `UPDATE concerts SET concert_name=$1, artist_name=$2, description=$3, venue_id=$4, status=$5, cover_url=$6, updated_at=NOW()
+     WHERE concert_id=$7 RETURNING *`,
+    [concert_name, artist_name, description, venue_id, status, cover_url || null, id]
   );
   return rows[0] || null;
 }

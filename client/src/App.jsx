@@ -9,6 +9,11 @@ import BookingList from "./pages/booking/BookingList.jsx";
 import PaymentList from "./pages/payments/PaymentList.jsx";
 import Report from "./pages/report/Report.jsx";
 import Settings from "./pages/settings/Settings.jsx";
+import UserLayout from "./pages/user/UserLayout.jsx";
+import ConcertBrowse from "./pages/user/ConcertBrowse.jsx";
+import ConcertDetail from "./pages/user/ConcertDetail.jsx";
+import UserLogin from "./pages/user/UserLogin.jsx";
+import MyBookings from "./pages/user/MyBookings.jsx";
 
 function ProtectedRoute({ children }) {
   const { isLoggedIn } = useAuth();
@@ -18,7 +23,17 @@ function ProtectedRoute({ children }) {
 export default function App() {
   return (
     <Routes>
+      {/* Public user-facing routes */}
+      <Route path="/user" element={<UserLayout />}>
+        <Route index element={<ConcertBrowse />} />
+        <Route path="concert/:id" element={<ConcertDetail />} />
+        <Route path="login" element={<UserLogin />} />
+        <Route path="my-bookings" element={<MyBookings />} />
+      </Route>
+
       <Route path="/login" element={<LoginPage />} />
+
+      {/* Admin routes */}
       <Route
         path="/"
         element={

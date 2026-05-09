@@ -15,6 +15,11 @@ export const concertsApi = {
   delete: (id) => http(`/api/concerts/${id}`, { method: "DELETE" }),
 };
 
+// Organizers
+export const organizersApi = {
+  list: () => http("/api/organizers"),
+};
+
 // Venues
 export const venuesApi = {
   list: () => http("/api/venues"),
@@ -45,6 +50,21 @@ export const bookingsApi = {
   confirm: (id) => http(`/api/bookings/${id}/confirm`, { method: "PATCH" }),
   cancel: (id) => http(`/api/bookings/${id}/cancel`, { method: "PATCH" }),
   delete: (id) => http(`/api/bookings/${id}`, { method: "DELETE" }),
+};
+
+// Public booking (no auth required)
+export const publicApi = {
+  getConcerts: (params = {}) => http("/api/concerts?" + new URLSearchParams(params)),
+  getConcert: (id) => http(`/api/concerts/${id}`),
+  getSeats: (session_id) => http(`/api/seats?session_id=${session_id}`),
+  createBooking: (data) => http("/api/bookings", { method: "POST", body: JSON.stringify(data) }),
+  confirmBooking: (id) => http(`/api/bookings/${id}/confirm`, { method: "PATCH" }),
+};
+
+// Customer auth
+export const customerApi = {
+  login: (email, phone) => http("/api/customers/login", { method: "POST", body: JSON.stringify({ email, phone }) }),
+  myBookings: () => http("/api/customers/me/bookings"),
 };
 
 // Payments

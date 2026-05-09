@@ -4,8 +4,10 @@ import cors from "cors";
 
 import logger from "./utils/logger.js";
 import { sendError } from "./utils/response.js";
+import pool from "./db/pool.js";
 
 import authRoutes from "./routes/auth.routes.js";
+import organizersRoutes from "./routes/organizers.routes.js";
 import concertsRoutes from "./routes/concerts.routes.js";
 import venuesRoutes from "./routes/venues.routes.js";
 import sessionsRoutes from "./routes/sessions.routes.js";
@@ -59,6 +61,7 @@ app.get("/health", (_, res) => res.json({ ok: true }));
 
 // API Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/organizers", organizersRoutes);
 app.use("/api/concerts", concertsRoutes);
 app.use("/api/venues", venuesRoutes);
 app.use("/api/sessions", sessionsRoutes);
@@ -80,3 +83,26 @@ app.use((err, req, res, _next) => {
 const port = process.env.PORT || 4000;
 const host = process.env.HOST || "0.0.0.0";
 app.listen(port, host, () => logger.info(`EventBok server listening on ${host}:${port}`));
+
+// Cancel pending bookings older than 10 minutes and release seats
+async function expireStaleBookings() {
+  try {
+    const { rows } = await pool.query(
+      `UPDATE bookings SET status = 'cancelled'
+       WHERE status = 'pending' AND booking_date < NOW() - INTERVAL '10 minutes'
+       RETURNING booking_id`
+    );
+    if (rows.length === 0) return;
+    const ids = rows.map((r) => r.booking_id);
+    await pool.query(
+      `UPDATE seats SET seat_status = 'available'
+       WHERE seat_id IN (SELECT seat_id FROM tickets WHERE booking_id = ANY($1))`,
+      [ids]
+    );
+    logger.info(`Expired ${rows.length} stale booking(s): ${ids.join(", ")}`);
+  } catch (err) {
+    logger.error("Payment expiry job failed", { error: err.message });
+  }
+}
+
+setInterval(expireStaleBookings, 60_000);

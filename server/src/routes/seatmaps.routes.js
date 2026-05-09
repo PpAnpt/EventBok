@@ -1,4 +1,7 @@
 import { Router } from "express";
+import * as ctrl from "../controllers/seatmaps.controller.js";
+
 const router = Router();
-// TODO: add seatmaps routes
+router.get("/", ctrl.listSeatmaps);
+router.get("/:id", ctrl.getSeatmap);
 export default router;
