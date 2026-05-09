@@ -42,6 +42,7 @@ CREATE TABLE concerts (
   venue_id     BIGINT       NOT NULL REFERENCES venues(venue_id) ON DELETE RESTRICT,
   status       VARCHAR(20)  NOT NULL DEFAULT 'upcoming'
                             CHECK (status IN ('upcoming','ongoing','completed','cancelled')),
+  cover_url    VARCHAR(500),
   created_at   TIMESTAMP    NOT NULL DEFAULT NOW(),
   updated_at   TIMESTAMP    NOT NULL DEFAULT NOW()
 );

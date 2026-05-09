@@ -44,6 +44,17 @@ INSERT INTO sessions (session_name, show_date, start_time, end_time, concert_id,
   ('Day 2',         '2026-05-02', '18:00', '22:00', 3, 3),
   ('Gala Night',    '2026-03-10', '19:30', '22:00', 4, 4);
 
+-- Seats for Grand Arena (seatmap_id=1, zone_id=1 VIP, 2 Premium, 3 Regular)
+INSERT INTO seats (seat_no, zone_id)
+  SELECT 'A' || n, 1 FROM generate_series(1,12) n UNION ALL
+  SELECT 'B' || n, 1 FROM generate_series(1,12) n UNION ALL
+  SELECT 'C' || n, 2 FROM generate_series(1,12) n UNION ALL
+  SELECT 'D' || n, 2 FROM generate_series(1,12) n UNION ALL
+  SELECT 'E' || n, 3 FROM generate_series(1,12) n UNION ALL
+  SELECT 'F' || n, 3 FROM generate_series(1,12) n UNION ALL
+  SELECT 'G' || n, 3 FROM generate_series(1,12) n UNION ALL
+  SELECT 'H' || n, 3 FROM generate_series(1,12) n;
+
 -- Customers
 INSERT INTO customers (firstname, lastname, email, phone, date_of_birth) VALUES
   ('John',    'Smith',    'john@example.com',    '081-111-0001', '1990-01-15'),
