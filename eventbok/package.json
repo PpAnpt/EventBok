@@ -1,0 +1,17 @@
+{
+  "name": "eventbok",
+  "version": "1.0.0",
+  "description": "EventBok - Concert Ticket Booking System",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client",
+    "install:all": "npm install && npm install --prefix server && npm install --prefix client",
+    "docker:db:start": "node scripts/docker-db-start.js",
+    "docker:db:stop": "node scripts/docker-db-stop.js",
+    "db:reset": "node scripts/db-reset.js"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

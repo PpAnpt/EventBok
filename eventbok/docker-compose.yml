@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  pgdatabase:
+    image: postgres:16-alpine
+    container_name: eventbok_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: eventbok_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./database/sql/001_schema.sql:/docker-entrypoint-initdb.d/001_schema.sql
+      - ./database/sql/002_seed.sql:/docker-entrypoint-initdb.d/002_seed.sql
+
+  adminer:
+    image: adminer
+    container_name: eventbok_adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    depends_on:
+      - pgdatabase
+
+volumes:
+  pgdata:
