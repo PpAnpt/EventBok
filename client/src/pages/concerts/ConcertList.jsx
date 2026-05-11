@@ -84,12 +84,23 @@ function AddModal({ onClose, onAdd }) {
   const updateSession = (idx, field, value) => setSessions((p) => p.map((s, i) => (i === idx ? { ...s, [field]: value } : s)));
 
   const handleSave = async () => {
-    if (!form.concert_name || !form.organizer_id || !form.venue_id) return;
+    if (!form.concert_name || !form.organizer_id || !form.venue_id) {
+      alert("กรุณากรอกข้อมูล Concert ให้ครบถ้วน (ชื่อ, ผู้จัด, สถานที่)");
+      return;
+    }
+    
+    // Filter out empty sessions
+    const validSessions = sessions.filter(s => s.show_date && s.start_time);
+    if (validSessions.length === 0) {
+      alert("กรุณาเพิ่มอย่างน้อย 1 Session (ระบุวันที่และเวลา)");
+      return;
+    }
+
     try {
-      await concertsApi.create({ ...form, sessions });
+      await concertsApi.create({ ...form, sessions: validSessions });
       onAdd();
-    } catch {
-      onAdd();
+    } catch (err) {
+      alert("เกิดข้อผิดพลาดในการบันทึก: " + (err.message || "Unknown error"));
     }
   };
 

@@ -86,4 +86,11 @@ export const reportsApi = {
   summary: () => http("/api/reports/summary"),
   revenue: (params = {}) => http("/api/reports/revenue?" + new URLSearchParams(params)),
   bookings: (params = {}) => http("/api/reports/bookings?" + new URLSearchParams(params)),
+  topConcerts: () => http("/api/reports/top-concerts"),
+  venuePerformance: () => http("/api/reports/venue-performance"),
+};
+
+// Seats
+export const seatsApi = {
+  list: (params = {}) => http("/api/seats?" + new URLSearchParams(params)),
 };

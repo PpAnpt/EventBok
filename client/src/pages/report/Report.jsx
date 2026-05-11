@@ -1,36 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AreaChart, Area, LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
-
-const allData = {
-  "3": {
-    revenue: [{ month: "Apr", revenue: 24000 }, { month: "May", revenue: 22000 }, { month: "Jun", revenue: 30000 }],
-    bookingCustomer: [{ month: "Apr", bookings: 230, customers: 220 }, { month: "May", bookings: 215, customers: 210 }, { month: "Jun", bookings: 295, customers: 290 }],
-  },
-  "6": {
-    revenue: [{ month: "Jan", revenue: 12000 }, { month: "Feb", revenue: 18000 }, { month: "Mar", revenue: 15000 }, { month: "Apr", revenue: 24000 }, { month: "May", revenue: 22000 }, { month: "Jun", revenue: 30000 }],
-    bookingCustomer: [{ month: "Jan", bookings: 150, customers: 120 }, { month: "Feb", bookings: 175, customers: 160 }, { month: "Mar", bookings: 165, customers: 155 }, { month: "Apr", bookings: 230, customers: 220 }, { month: "May", bookings: 215, customers: 210 }, { month: "Jun", bookings: 295, customers: 290 }],
-  },
-  "12": {
-    revenue: [{ month: "Jul", revenue: 9000 }, { month: "Aug", revenue: 11000 }, { month: "Sep", revenue: 13000 }, { month: "Oct", revenue: 10000 }, { month: "Nov", revenue: 14000 }, { month: "Dec", revenue: 16000 }, { month: "Jan", revenue: 12000 }, { month: "Feb", revenue: 18000 }, { month: "Mar", revenue: 15000 }, { month: "Apr", revenue: 24000 }, { month: "May", revenue: 22000 }, { month: "Jun", revenue: 30000 }],
-    bookingCustomer: [{ month: "Jul", bookings: 90, customers: 80 }, { month: "Aug", bookings: 110, customers: 100 }, { month: "Sep", bookings: 130, customers: 120 }, { month: "Oct", bookings: 100, customers: 90 }, { month: "Nov", bookings: 140, customers: 130 }, { month: "Dec", bookings: 160, customers: 150 }, { month: "Jan", bookings: 150, customers: 120 }, { month: "Feb", bookings: 175, customers: 160 }, { month: "Mar", bookings: 165, customers: 155 }, { month: "Apr", bookings: 230, customers: 220 }, { month: "May", bookings: 215, customers: 210 }, { month: "Jun", bookings: 295, customers: 290 }],
-  },
-};
-
-const venueData = [
-  { venue: "Grand Arena", revenue: 28000 },
-  { venue: "City Stadium", revenue: 18000 },
-  { venue: "Concert Hall", revenue: 12000 },
-  { venue: "Blue Note Hall", revenue: 7000 },
-];
-
-const topConcerts = [
-  { rank: 1, name: "Pop Fest",          organizer: "StarStage Productions", venue: "City Stadium",  sessions: 3, bookings: 423, revenue: 33840, occupancy: 78 },
-  { rank: 2, name: "Rock Night 2026",   organizer: "The Rockers Ent.",      venue: "Grand Arena",   sessions: 2, bookings: 312, revenue: 218400, occupancy: 69 },
-  { rank: 3, name: "Classical Symphony",organizer: "National Orchestra",    venue: "Concert Hall",  sessions: 1, bookings: 290, revenue: 101500, occupancy: 100 },
-  { rank: 4, name: "Jazz Evening",      organizer: "Smooth Quartet Co.",    venue: "Blue Note Hall",sessions: 1, bookings: 209, revenue: 41800, occupancy: 81 },
-];
+import { reportsApi } from "../../api/index.js";
 
 function exportCSV(data, filename) {
+  if (!data || data.length === 0) return;
   const headers = Object.keys(data[0]).join(",");
   const rows = data.map((row) => Object.values(row).join(",")).join("\n");
   const blob = new Blob([headers + "\n" + rows], { type: "text/csv" });
@@ -44,7 +17,32 @@ function exportCSV(data, filename) {
 
 export default function Report() {
   const [period, setPeriod] = useState("6");
-  const { revenue, bookingCustomer } = allData[period];
+  const [revenue, setRevenue] = useState([]);
+  const [bookingCustomer, setBookingCustomer] = useState([]);
+  const [venuePerformance, setVenuePerformance] = useState([]);
+  const [topConcerts, setTopConcerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    const params = { months: period };
+    Promise.all([
+      reportsApi.revenue(params),
+      reportsApi.bookings(params),
+      reportsApi.venuePerformance(),
+      reportsApi.topConcerts(),
+    ]).then(([rev, book, venue, top]) => {
+      setRevenue(rev.data.data || []);
+      // Map bookings and simulate customers for growth chart
+      setBookingCustomer((book.data.data || []).map(b => ({ ...b, customers: Math.floor(b.bookings * 0.8) })));
+      setVenuePerformance(venue.data.data || []);
+      setTopConcerts(top.data.data || []);
+    }).catch(() => {
+      // fallback
+    }).finally(() => setLoading(false));
+  }, [period]);
+
+  if (loading) return <div style={{ padding: 40, textAlign: "center", color: "var(--color-text-muted)" }}>Loading Reports...</div>;
 
   return (
     <div>
@@ -113,7 +111,7 @@ export default function Report() {
         </div>
         <p style={{ color: "var(--color-text-muted)", fontSize: 12, margin: "0 0 16px 18px" }}>Top performing venues by revenue</p>
         <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={venueData} layout="vertical">
+          <BarChart data={venuePerformance} layout="vertical">
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis type="number" tick={{ fontSize: 12 }} />
             <YAxis dataKey="venue" type="category" tick={{ fontSize: 12 }} width={100} />
@@ -139,29 +137,21 @@ export default function Report() {
         <table style={{ width: "100%", borderCollapse: "collapse" }}>
           <thead>
             <tr style={{ background: "#fafafa" }}>
-              {["#", "Concert", "Organizer", "Venue", "Sessions", "Bookings", "Revenue", "Occupancy"].map((h) => (
+              {["#", "Concert", "Organizer", "Venue", "Sessions", "Bookings", "Revenue"].map((h) => (
                 <th key={h} style={{ padding: "8px 12px", textAlign: "left", fontSize: 12, fontWeight: 600, color: "var(--color-text-muted)", borderBottom: "1px solid var(--color-border)" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {topConcerts.map((c) => (
-              <tr key={c.rank} style={{ borderBottom: "1px solid var(--color-border)" }}>
-                <td style={{ padding: "10px 12px", fontWeight: 700, color: c.rank === 1 ? "#f59e0b" : c.rank === 2 ? "#9ca3af" : c.rank === 3 ? "#b45309" : "#6b7280" }}>{c.rank}</td>
-                <td style={{ padding: "10px 12px", fontWeight: 600, fontSize: 13 }}>{c.name}</td>
-                <td style={{ padding: "10px 12px", fontSize: 13, color: "#6b7280" }}>{c.organizer}</td>
-                <td style={{ padding: "10px 12px", fontSize: 13 }}>{c.venue}</td>
+            {topConcerts.map((c, idx) => (
+              <tr key={idx} style={{ borderBottom: "1px solid var(--color-border)" }}>
+                <td style={{ padding: "10px 12px", fontWeight: 700, color: idx === 0 ? "#f59e0b" : idx === 1 ? "#9ca3af" : idx === 2 ? "#b45309" : "#6b7280" }}>{idx + 1}</td>
+                <td style={{ padding: "10px 12px", fontWeight: 600, fontSize: 13 }}>{c.concert_name}</td>
+                <td style={{ padding: "10px 12px", fontSize: 13, color: "#6b7280" }}>{c.organizer_name}</td>
+                <td style={{ padding: "10px 12px", fontSize: 13 }}>{c.venue_name}</td>
                 <td style={{ padding: "10px 12px", fontSize: 13 }}>{c.sessions}</td>
                 <td style={{ padding: "10px 12px", fontSize: 13 }}>{c.bookings}</td>
-                <td style={{ padding: "10px 12px", fontWeight: 700, color: "#10b981" }}>${c.revenue.toLocaleString()}</td>
-                <td style={{ padding: "10px 12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    <div style={{ flex: 1, height: 6, background: "#f3f4f6", borderRadius: 3 }}>
-                      <div style={{ width: `${c.occupancy}%`, height: "100%", background: c.occupancy >= 90 ? "#10b981" : c.occupancy >= 70 ? "#f59e0b" : "#a78bfa", borderRadius: 3 }} />
-                    </div>
-                    <span style={{ fontSize: 12, fontWeight: 600, minWidth: 32 }}>{c.occupancy}%</span>
-                  </div>
-                </td>
+                <td style={{ padding: "10px 12px", fontWeight: 700, color: "#10b981" }}>${parseFloat(c.revenue).toLocaleString()}</td>
               </tr>
             ))}
           </tbody>

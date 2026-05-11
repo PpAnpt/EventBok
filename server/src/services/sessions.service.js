@@ -6,7 +6,8 @@ export async function listSessions({ concert_id } = {}) {
   if (concert_id) { params.push(concert_id); conditions.push(`s.concert_id = $${params.length}`); }
 
   const { rows } = await pool.query(
-    `SELECT s.*, c.concert_name, v.venue_name
+    `SELECT s.session_id, s.session_name, s.show_date::TEXT, s.start_time, s.end_time, s.concert_id, s.venue_id,
+            c.concert_name, v.venue_name
      FROM sessions s
      LEFT JOIN concerts c ON s.concert_id = c.concert_id
      LEFT JOIN venues v ON s.venue_id = v.venue_id

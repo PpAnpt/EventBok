@@ -18,8 +18,19 @@ const payStatusColor = {
 
 const PLACEHOLDER = "https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=400&q=60";
 
+const sortSeats = (seats) => {
+  return [...(seats || [])].sort((a, b) => {
+    const rowA = a.seat_no.replace(/\d+$/, "");
+    const rowB = b.seat_no.replace(/\d+$/, "");
+    if (rowA !== rowB) return rowA.localeCompare(rowB);
+    const numA = parseInt(a.seat_no.match(/\d+$/)?.[0] || 0, 10);
+    const numB = parseInt(b.seat_no.match(/\d+$/)?.[0] || 0, 10);
+    return numA - numB;
+  });
+};
+
 function TicketModal({ booking, onClose }) {
-  const seats = booking.seats || [];
+  const seats = sortSeats(booking.seats);
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 16 }}>
       <div style={{ background: "#fff", borderRadius: 20, width: "100%", maxWidth: 420, maxHeight: "90vh", overflowY: "auto", boxShadow: "0 20px 60px rgba(0,0,0,0.25)", padding: 24 }}>
@@ -130,7 +141,7 @@ export default function MyBookings() {
 
                 <div style={{ display: "flex", gap: 16, fontSize: 12, color: "#6b7280", marginBottom: 10, flexWrap: "wrap" }}>
                   <span>📍 {b.venue_name}</span>
-                  <span>💺 {(b.seats || []).map((s) => s.seat_no).join(", ") || "-"}</span>
+                  <span>💺 {sortSeats(b.seats).map((s) => s.seat_no).join(", ") || "-"}</span>
                   <span>💰 ${b.total_price}</span>
                 </div>
 

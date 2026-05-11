@@ -18,3 +18,7 @@ export async function getTopConcerts(req, res) {
   try { sendOne(res, await svc.getTopConcerts()); }
   catch (err) { logger.error("getTopConcerts", { error: err?.message }); sendError(res, err?.message, 500); }
 }
+export async function getVenuePerformance(req, res) {
+  try { sendOne(res, await svc.getVenuePerformance()); }
+  catch (err) { logger.error("getVenuePerformance", { error: err?.message }); sendError(res, err?.message, 500); }
+}

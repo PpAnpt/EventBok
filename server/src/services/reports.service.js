@@ -62,3 +62,17 @@ export async function getTopConcerts() {
   );
   return { data: rows };
 }
+
+export async function getVenuePerformance() {
+  const { rows } = await pool.query(
+    `SELECT v.venue_name AS venue,
+            COALESCE(SUM(p.total_price), 0) AS revenue
+     FROM venues v
+     LEFT JOIN sessions s ON s.venue_id = v.venue_id
+     LEFT JOIN bookings b ON b.session_id = s.session_id AND b.status = 'confirmed'
+     LEFT JOIN payments p ON p.booking_id = b.booking_id AND p.payment_status = 'completed'
+     GROUP BY v.venue_id, v.venue_name
+     ORDER BY revenue DESC`
+  );
+  return { data: rows };
+}

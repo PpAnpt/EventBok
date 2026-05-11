@@ -3,6 +3,17 @@ import { bookingsApi } from "../../api/index.js";
 
 const statusColor = { confirmed: { bg: "#dcfce7", color: "#16a34a" }, pending: { bg: "#fef9c3", color: "#a16207" }, cancelled: { bg: "#fee2e2", color: "#dc2626" } };
 
+const sortSeats = (seats) => {
+  return [...(seats || [])].sort((a, b) => {
+    const rowA = a.seat_no.replace(/\d+$/, "");
+    const rowB = b.seat_no.replace(/\d+$/, "");
+    if (rowA !== rowB) return rowA.localeCompare(rowB);
+    const numA = parseInt(a.seat_no.match(/\d+$/)?.[0] || 0, 10);
+    const numB = parseInt(b.seat_no.match(/\d+$/)?.[0] || 0, 10);
+    return numA - numB;
+  });
+};
+
 function ViewModal({ booking, onClose }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
@@ -14,7 +25,7 @@ function ViewModal({ booking, onClose }) {
           ["Concert", booking.concert_name],
           ["Session", booking.session_name],
           ["Session Date", booking.show_date],
-          ["Seats", (booking.seats || []).map((s) => s.seat_no).join(", ")],
+          ["Seats", sortSeats(booking.seats).map((s) => s.seat_no).join(", ")],
           ["Amount", booking.total_price ? `$${booking.total_price}` : "-"],
           ["Status", booking.status],
         ].map(([label, value]) => (
@@ -115,7 +126,7 @@ export default function BookingList() {
                   <td style={{ padding: "12px 16px" }}>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>{b.concert_name}</div>
                     <div style={{ display: "flex", gap: 4, marginTop: 4, flexWrap: "wrap" }}>
-                      {(b.seats || []).map((s) => (
+                      {sortSeats(b.seats).map((s) => (
                         <span key={s.seat_no} style={{ background: "#f0f0f0", padding: "1px 7px", borderRadius: 6, fontSize: 11 }}>{s.seat_no}</span>
                       ))}
                     </div>

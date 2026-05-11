@@ -9,10 +9,19 @@ const seatColor = { available: "#e0e7ff", reserved: "#d1d5db", booked: "#fecaca"
 
 // ——— Payment Modal ———
 function PaymentModal({ result, concert, session, onClose }) {
-  const { booking, payment, seats } = result;
+  const { booking, payment, seats: rawSeats } = result;
   const [phase, setPhase] = useState("pay"); // "pay" | "ticket"
   const [confirming, setConfirming] = useState(false);
   const ticketRef = useRef(null);
+
+  const seats = [...(rawSeats || [])].sort((a, b) => {
+    const rowA = a.seat_no.replace(/\d+$/, "");
+    const rowB = b.seat_no.replace(/\d+$/, "");
+    if (rowA !== rowB) return rowA.localeCompare(rowB);
+    const numA = parseInt(a.seat_no.match(/\d+$/)?.[0] || 0, 10);
+    const numB = parseInt(b.seat_no.match(/\d+$/)?.[0] || 0, 10);
+    return numA - numB;
+  });
 
   const paymentQrContent = `EVENTBOK PAYMENT\nAmount: $${payment.total_price}\nBooking: #${booking.booking_id}\nTransaction: ${payment.transaction_id}`;
 
@@ -202,6 +211,15 @@ export default function ConcertDetail() {
 
   const totalPrice = selectedSeats.reduce((sum, s) => sum + parseFloat(s.price || 0), 0);
 
+  const sortedSelectedSeats = [...selectedSeats].sort((a, b) => {
+    const rowA = a.seat_no.replace(/\d+$/, "");
+    const rowB = b.seat_no.replace(/\d+$/, "");
+    if (rowA !== rowB) return rowA.localeCompare(rowB);
+    const numA = parseInt(a.seat_no.match(/\d+$/)?.[0] || 0, 10);
+    const numB = parseInt(b.seat_no.match(/\d+$/)?.[0] || 0, 10);
+    return numA - numB;
+  });
+
   const handleBook = async () => {
     if (!selectedSession || selectedSeats.length === 0) { setError("กรุณาเลือก session และที่นั่ง"); return; }
     if (!form.firstname || !form.lastname || !form.email) { setError("กรุณากรอกชื่อและอีเมล"); return; }
@@ -323,9 +341,9 @@ export default function ConcertDetail() {
             </div>
           )}
 
-          {selectedSeats.length > 0 && (
+          {sortedSelectedSeats.length > 0 && (
             <div style={{ marginTop: 10, padding: "10px 16px", background: "#f3f0ff", borderRadius: 10, fontSize: 13, color: "#7c3aed", fontWeight: 600 }}>
-              เลือกแล้ว: {selectedSeats.map((s) => s.seat_no).join(", ")} · รวม: ${totalPrice.toFixed(2)}
+              เลือกแล้ว: {sortedSelectedSeats.map((s) => s.seat_no).join(", ")} · รวม: ${totalPrice.toFixed(2)}
             </div>
           )}
         </section>
@@ -380,9 +398,20 @@ export default function ConcertDetail() {
 function groupByRow(seats) {
   const map = {};
   for (const seat of seats) {
+    // Extract row (e.g., "A" from "A1")
     const row = seat.seat_no.replace(/\d+$/, "");
     if (!map[row]) map[row] = [];
     map[row].push(seat);
   }
-  return Object.entries(map).map(([row, rowSeats]) => ({ row, rowSeats }));
+  return Object.entries(map)
+    .sort(([rowA], [rowB]) => rowA.localeCompare(rowB))
+    .map(([row, rowSeats]) => {
+      // Sort rowSeats numerically (1, 2, 10, 11 instead of 1, 10, 11, 2)
+      rowSeats.sort((a, b) => {
+        const numA = parseInt(a.seat_no.match(/\d+$/)?.[0] || 0, 10);
+        const numB = parseInt(b.seat_no.match(/\d+$/)?.[0] || 0, 10);
+        return numA - numB;
+      });
+      return { row, rowSeats };
+    });
 }
